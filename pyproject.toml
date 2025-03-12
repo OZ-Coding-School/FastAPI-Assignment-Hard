@@ -1,0 +1,42 @@
+[project]
+name = "fastapi-assignment-hard"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "meoyoug",email = "eodyd426@gmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi[standard] (>=0.115.11,<0.116.0)",
+    "black (>=25.1.0,<26.0.0)",
+    "ruff (>=0.9.10,<0.10.0)",
+    "mypy (==1.13.0)",
+    "pytest-asyncio (>=0.25.3,<0.26.0)",
+    "coverage (>=7.6.12,<8.0.0)",
+    "httpx (>=0.28.1,<0.29.0)",
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 120
+
+[tool.ruff]
+target-version = "py312"
+
+[tool.mypy]
+plugins = ["pydantic.mypy"]
+python_version = 3.12
+strict = true
+
+[tool.coverage.run]
+omit = ["*/test_*.py"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
+filterwarnings = ["ignore::DeprecationWarning"]
