@@ -1,0 +1,102 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  static-analysis: # mypy, black, ruff 등 정적 분석만 실행
+    runs-on: ubuntu-22.04 # 실제 프로덕션 환경에서는 lastest 대신 버젼을 고정하는 것이 좋다. 업데이트 사항에 따라 예상치 못한 에러가 발생할 수 있기 때문.
+    steps:
+      - name: Check out the codes
+        uses: actions/checkout@v2 # 가장 최신의 커밋을 가져온다.
+
+      - name: Setup python environment
+        id: setup-python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.13" # 파이썬 버젼 역시 개발환경에 맞는 버젼으로 고정으로 사용한다.
+
+      - name: Cache Poetry
+        id: cache-poetry
+        uses: actions/cache@v3
+        with:
+          key: poetry-2.0.1
+          path: ~/.local/ # poetry 의 실제 설치 경로를 통째로 캐시함.
+
+      - name: Install Poetry
+        if: steps.cache-poetry.outputs.cache-hit != 'true'
+        run: | # 개행을 하여 여러줄로 명령어를 사용하고 싶을때 파이프라인 기호 | 를 사용한다.
+          curl -sSL https://install.python-poetry.org | python3 - --version 2.0.1
+
+      - name: Register Poetry bin # 포에트리 환경변수를 깃허브 패스(.zshrc 같은 쉘 설정파일)에 기입하여 포에트리 명령어를 사용할 수 있게 한다.
+        run: echo "${HOME}/.poetry/bin" >> $GITHUB_PATH
+
+      - name: Cache dependencies
+        id: cache-venv
+        uses: actions/cache@v3
+        with:
+          # hashFiles를 사용하여 파일의 해시값을 비교하여 파이썬 버전이 바뀌었을 때, lock 파일이나 toml 파일이 바뀌었을때 종속성을 재설치합니다.
+          # 바뀐 것이 없는 경우에는 캐싱된 종속성을 사용합니다.
+          key: python-${{ steps.setup-python.outputs.python-version }}-poetry-lock-${{ hashFiles('poetry.lock') }}-toml-${{ hashFiles('pyproject.toml') }}-poetry-1.8.5
+          path: /home/runner/.cache/pypoetry/virtualenvs/
+
+      - name: Install dependencies # pytest 를 dev 종속성으로 설치하였기 때문에 only-main 옵션은 사용하지 않는다.
+        if: steps.cache-venv.outputs.cache-hit != 'true'
+        run: poetry install --no-root
+
+      - name: Run Black
+        run: poetry run black . --check # check 옵션을 걸게되면 리포매팅을 하지 않는다.
+
+      - name: Run Ruff
+        run: | # Isort 를 먼저 체크하고 기본 lint 규칙을 지켰는지 검사한다.
+          poetry run ruff check --select I
+          poetry run ruff check
+
+      - name: Run Mypy # mypy 타입 정적 검사를 실행한다.
+        run: poetry run mypy .
+
+  test: # mypy와 직렬로 실행하게되면 시간이 너무 오래 걸려서 test와 정적 타입분석은 병렬로 실행
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Check out the codes
+        uses: actions/checkout@v2
+
+      - name: Setup python environment
+        id: setup-python
+        uses: actions/setup-python@v2
+        with:
+          python-version: "3.12"
+
+      - name: Cache Poetry
+        id: cache-poetry
+        uses: actions/cache@v3
+        with:
+          key: poetry-2.0.1
+          path: ~/.local/ # poetry 의 실제 설치 경로를 통째로 캐시함.
+
+      - name: Install Poetry
+        if: steps.cache-poetry.outputs.cache-hit != 'true'
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 - --version 2.0.1
+
+      - name: Register Poetry bin
+        run: echo "${HOME}/.poetry/bin" >> $GITHUB_PATH
+
+      - name: Cache dependencies
+        id: cache-venv
+        uses: actions/cache@v3
+        with:
+          key: python-${{ steps.setup-python.outputs.python-version }}-poetry-lock-${{ hashFiles('poetry.lock') }}-toml-${{ hashFiles('pyproject.toml') }}-poetry-1.8.5
+          path: /home/runner/.cache/pypoetry/virtualenvs/
+
+      - name: Install dependencies
+        if: steps.cache-venv.outputs.cache-hit != 'true'
+        run: poetry install --no-root
+
+      - name: Run tests # 커버리지로 pytest를 실행하고 결과 report를 출력한다.
+        run: |
+          poetry run coverage run -m pytest .
+          poetry run coverage report -m
