@@ -65,7 +65,7 @@ class MovieModel:
                 playtime=random.randint(100, 300),
                 genre=random.sample(["SF", "Romantic", "Adventure", "Action", "Comedy", "Horror"], k=3),
             )
-    
+
     @classmethod
     def clear(cls) -> None:
         """모든 영화 삭제"""
