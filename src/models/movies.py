@@ -65,6 +65,11 @@ class MovieModel:
                 playtime=random.randint(100, 300),
                 genre=random.sample(["SF", "Romantic", "Adventure", "Action", "Comedy", "Horror"], k=3),
             )
+    
+    @classmethod
+    def clear(cls) -> None:
+        """모든 영화 삭제"""
+        cls._data = []
 
     def __repr__(self) -> str:
         return f"MovieModel(id={self.id}, title='{self.title}', playtime={self.playtime}, genre='{self.genre}')"
