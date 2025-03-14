@@ -36,6 +36,13 @@ strict = true
 [tool.coverage.run]
 omit = ["*/test_*.py"]
 
+[tool.coverage.report]
+exclude_also = [
+    "def __repr__",
+    "def __str__",
+    "if __name__ == .__main__.:",
+    ]
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "session"

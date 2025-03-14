@@ -34,7 +34,11 @@ class MovieModel:
     @classmethod
     def filter(cls, **kwargs: Any) -> list[MovieModel]:
         """조건에 맞는 모든 영화 리스트 반환"""
-        return [movie for movie in cls._data if all(getattr(movie, key) == value for key, value in kwargs.items())]
+        return [
+            movie
+            for movie in cls._data
+            if all(getattr(movie, key) == value or value in getattr(movie, key) for key, value in kwargs.items())
+        ]
 
     def update(self, **kwargs: Any) -> None:
         """영화 정보 업데이트"""
@@ -59,8 +63,13 @@ class MovieModel:
             cls.create(
                 title=f"dummy_movie {i}",
                 playtime=random.randint(100, 300),
-                genre=random.choices(["SF", "Romantic", "Adventure", "Action", "Comedy", "Horror"]),
+                genre=random.sample(["SF", "Romantic", "Adventure", "Action", "Comedy", "Horror"], k=3),
             )
+
+    @classmethod
+    def clear(cls) -> None:
+        """모든 영화 삭제"""
+        cls._data = []
 
     def __repr__(self) -> str:
         return f"MovieModel(id={self.id}, title='{self.title}', playtime={self.playtime}, genre='{self.genre}')"
