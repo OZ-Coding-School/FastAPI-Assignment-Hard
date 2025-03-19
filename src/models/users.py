@@ -3,25 +3,47 @@ from __future__ import annotations
 import random
 from typing import Any
 
+from passlib.context import CryptContext
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
 
 class UserModel:
     _data: list[UserModel] = []  # 전체 사용자 데이터를 저장하는 리스트
-    _id_counter = 1  # ID 자동 증가를 위한 카운터
+    _id_counter: int = 1  # ID 자동 증가를 위한 카운터
 
-    def __init__(self, username: str, age: int, gender: str) -> None:
+    def __init__(self, username: str, password: str, age: int, gender: str) -> None:
         self.id = UserModel._id_counter
         self.username = username
+        self.password = self.get_hashed_password(password)
         self.age = age
         self.gender = gender
+        self.last_login = None
 
         # 클래스가 인스턴스화 될 때 _data에 추가하고 _id_counter를 증가시킴
         UserModel._data.append(self)
         UserModel._id_counter += 1
 
+    @staticmethod
+    def get_hashed_password(password: str) -> str:
+        """비밀번호 해시화"""
+        return pwd_context.hash(password)
+
+    @staticmethod
+    def verify_password(plain_password: str, hashed_password: str) -> bool:
+        return pwd_context.verify(plain_password, hashed_password)
+
     @classmethod
-    def create(cls, username: str, age: int, gender: str) -> UserModel:
+    def authenticate(cls, username: str, password: str) -> UserModel | None:
+        for user in cls._data:
+            if user.username == username and cls.verify_password(password, user.password):
+                return user
+        return None
+
+    @classmethod
+    def create(cls, username: str, password: str, age: int, gender: str) -> UserModel:
         """새로운 유저 추가"""
-        return cls(username, age, gender)
+        return cls(username, password, age, gender)
 
     @classmethod
     def get(cls, **kwargs: Any) -> UserModel | None:
@@ -41,6 +63,8 @@ class UserModel:
         for key, value in kwargs.items():
             if hasattr(self, key):
                 if value is not None:
+                    if key == "password":
+                        value = pwd_context.hash(value)
                     setattr(self, key, value)
 
     def delete(self) -> None:
@@ -61,7 +85,7 @@ class UserModel:
     @classmethod
     def create_dummy(cls) -> None:
         for i in range(1, 11):
-            cls(username=f"dummy{i}", age=15 + i, gender=random.choice(["male", "female"]))
+            cls(username=f"dummy{i}", password=f"password{i}", age=15 + i, gender=random.choice(["male", "female"]))
 
     def __repr__(self) -> str:
         return f"UserModel(id={self.id}, username='{self.username}', age={self.age}, gender='{self.gender}')"
