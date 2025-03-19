@@ -1,14 +1,16 @@
 from typing import Annotated
 
-from fastapi import APIRouter, HTTPException, Path, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 
 from src.models.users import UserModel
 from src.schemas.users import (
     UserCreateRequest,
+    UserLoginRequest,
     UserResponse,
     UserSearchParams,
     UserUpdateRequest,
 )
+from src.services.auth import AuthService
 
 user_router = APIRouter(prefix="/users", tags=["users"])
 
@@ -27,6 +29,11 @@ async def get_all_users() -> list[UserModel]:
     return result
 
 
+@user_router.post("/login", status_code=204)
+async def login(data: UserLoginRequest, auth_service: AuthService = Depends()) -> Response:
+    return auth_service.login(data.username, data.password)
+
+
 @user_router.get("/search", response_model=list[UserResponse])
 async def search_users(query_params: Annotated[UserSearchParams, Query()]) -> list[UserModel]:
     valid_query = {key: value for key, value in query_params.model_dump().items() if value is not None}
@@ -36,28 +43,24 @@ async def search_users(query_params: Annotated[UserSearchParams, Query()]) -> li
     return filtered_users
 
 
-@user_router.get("/{user_id}", response_model=UserResponse)
-async def get_user(user_id: int = Path(gt=0)) -> UserModel:
-    user = UserModel.get(id=user_id)
-    if user is None:
-        raise HTTPException(status_code=404)
-    return user
+@user_router.get("/me", response_model=UserResponse)
+async def get_user(request: Request) -> UserModel:
+    assert isinstance(request.state.user, UserModel)
+    return request.state.user
 
 
-@user_router.patch("/{user_id}", response_model=UserResponse)
-async def update_user(data: UserUpdateRequest, user_id: int = Path(gt=0)) -> UserModel:
-    user = UserModel.get(id=user_id)
-    if user is None:
-        raise HTTPException(status_code=404)
+@user_router.patch("/me", response_model=UserResponse)
+async def update_user(data: UserUpdateRequest, request: Request) -> UserModel:
+    assert isinstance(request.state.user, UserModel)
+    user = request.state.user
     user.update(**data.model_dump())
     return user
 
 
-@user_router.delete("/{user_id}")
-async def delete_user(user_id: int = Path(gt=0)) -> dict[str, str]:
-    user = UserModel.get(id=user_id)
-    if user is None:
-        raise HTTPException(status_code=404)
+@user_router.delete("/me")
+async def delete_user(request: Request) -> dict[str, str]:
+    assert isinstance(request.state.user, UserModel)
+    user = request.state.user
     user.delete()
 
-    return {"detail": f"User: {user_id}, Successfully Deleted."}
+    return {"detail": "Successfully Deleted."}
