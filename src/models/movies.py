@@ -1,5 +1,4 @@
 from enum import StrEnum
-from typing import Any
 
 from pydantic import BaseModel as PydanticBaseModel
 from tortoise import Model, fields
@@ -30,7 +29,7 @@ class CastModel(PydanticBaseModel):
 class Movie(BaseModel, Model):
     title = fields.CharField(max_length=255)
     plot = fields.TextField()
-    cast: list[dict[str, Any]] = fields.JSONField(field_type=list[CastModel])
+    cast: list[CastModel] = fields.JSONField(field_type=list[CastModel])
     playtime = fields.IntField()
     genre = fields.CharEnumField(GenreEnum)
 
