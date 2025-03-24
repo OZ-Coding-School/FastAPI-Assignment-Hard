@@ -11,7 +11,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
         try:
             if request.url.path.startswith("/users"):
                 if request.url.path not in ["/users/login", "/users", "/users/search"]:
-                    request = AuthService().get_current_user(request)
+                    request = await AuthService().get_current_user(request)
             response: Response = await call_next(request)
             return response
         except HTTPException as e:
