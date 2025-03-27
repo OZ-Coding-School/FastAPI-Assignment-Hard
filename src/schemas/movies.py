@@ -20,6 +20,7 @@ class MovieResponse(BaseModel):
     cast: list[CastModel]
     playtime: int
     genre: GenreEnum
+    poster_image_url: str | None = None
 
 
 class MovieSearchParams(BaseModel):

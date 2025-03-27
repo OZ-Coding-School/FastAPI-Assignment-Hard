@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, HTTPException, Path, Query
+from fastapi import APIRouter, Depends, HTTPException, Path, Query, UploadFile
 
 from src.models.movies import Movie
 from src.schemas.movies import (
@@ -9,6 +9,7 @@ from src.schemas.movies import (
     MovieSearchParams,
     MovieUpdateRequest,
 )
+from src.services.file import FileUploadService
 
 movie_router = APIRouter(prefix="/movies", tags=["movies"])
 
@@ -61,3 +62,25 @@ async def delete_movie(movie_id: int = Path(gt=0)) -> None:
     if movie is None:
         raise HTTPException(status_code=404)
     await movie.delete()
+
+
+@movie_router.post("/{movie_id}/poster_image")
+async def register_profile_image(
+    image: UploadFile, movie_id: int = Path(gt=0), file_service: FileUploadService = Depends()
+) -> MovieResponse:
+    movie = await Movie.get_or_none(id=movie_id)
+
+    if movie is None:
+        raise HTTPException(status_code=404)
+
+    updated_movie = await file_service.movie_poster_image_upload(movie, image)
+
+    return MovieResponse(
+        id=updated_movie.id,
+        title=updated_movie.title,
+        plot=updated_movie.plot,
+        cast=updated_movie.cast,
+        playtime=updated_movie.playtime,
+        genre=updated_movie.genre,
+        poster_image_url=updated_movie.poster_image_url,
+    )
