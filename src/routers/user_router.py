@@ -1,6 +1,14 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    Query,
+    Request,
+    Response,
+    UploadFile,
+)
 
 from src.models.users import User
 from src.schemas.users import (
@@ -11,6 +19,7 @@ from src.schemas.users import (
     UserUpdateRequest,
 )
 from src.services.auth import AuthService
+from src.services.file import FileUploadService
 
 user_router = APIRouter(prefix="/users", tags=["users"])
 
@@ -70,3 +79,18 @@ async def delete_user(request: Request) -> dict[str, str]:
     await user.delete()
 
     return {"detail": "Successfully Deleted."}
+
+
+@user_router.post("/me/profile_image")
+async def register_profile_image(
+    request: Request, image: UploadFile, file_service: FileUploadService = Depends()
+) -> UserResponse:
+    updated_user = await file_service.user_profile_image_upload(request.state.user, image)
+
+    return UserResponse(
+        id=updated_user.id,
+        username=updated_user.username,
+        age=updated_user.age,
+        gender=updated_user.gender,
+        profile_image_url=updated_user.profile_image_url,
+    )
