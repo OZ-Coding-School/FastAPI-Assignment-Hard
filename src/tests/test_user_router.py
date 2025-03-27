@@ -1,11 +1,16 @@
+import os
+
 import httpx
 from fastapi import status
 from tortoise.contrib.test import TestCase
 
 from main import app
+from src.configs import config
 from src.models.users import GenderEnum, User
 from src.services.auth import AuthService
 from src.services.jwt import JWTService
+from src.tests.utils.fake_file import fake_image, fake_txt_file
+from src.utils.file import IMAGE_EXTENSIONS
 
 
 class TestUserRouter(TestCase):
@@ -270,3 +275,70 @@ class TestUserRouter(TestCase):
 
         # then
         assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    async def test_api_register_user_profile_image(self) -> None:
+        # given
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+            create_response = await client.post(
+                url="/users",
+                json={
+                    "username": "testuser",
+                    "password": (password := "password123"),
+                    "age": 20,
+                    "gender": GenderEnum.MALE,
+                },
+            )
+            user_id = create_response.json()
+            user = await User.get(id=user_id)
+
+            await client.post(url="/users/login", json={"username": user.username, "password": password})
+
+            # when
+            response = await client.post(
+                "/users/me/profile_image", files={"image": ((image := "test_image.png"), fake_image(), "image/png")}
+            )
+
+        # then
+        assert response.status_code == status.HTTP_200_OK
+        response_json = response.json()
+
+        assert f"users/profile_images/{image.rsplit(".")[0]}" in response_json["profile_image_url"]
+        assert image.rsplit(".")[1] in response_json["profile_image_url"]
+
+        await user.refresh_from_db()
+        assert response_json["profile_image_url"] == user.profile_image_url
+
+        saved_file_path = os.path.join(config.MEDIA_DIR, user.profile_image_url)
+        # 파일이 저장되었는지 확인
+        assert os.path.exists(saved_file_path)
+
+        # 리소스 정리
+        os.remove(saved_file_path)
+
+    async def test_api_register_user_profile_image_when_file_has_unavailable_extension(self) -> None:
+        # given
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+            create_response = await client.post(
+                url="/users",
+                json={
+                    "username": "testuser",
+                    "password": (password := "password123"),
+                    "age": 20,
+                    "gender": GenderEnum.MALE,
+                },
+            )
+            user_id = create_response.json()
+            user = await User.get(id=user_id)
+
+            await client.post(url="/users/login", json={"username": user.username, "password": password})
+
+            # when
+            response = await client.post(
+                "/users/me/profile_image", files={"image": ("test_file.txt", fake_txt_file(), "text/plain")}
+            )
+
+        # then
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        response_json = response.json()
+
+        assert response_json["detail"] == f"not allowed extension. available extensions: {IMAGE_EXTENSIONS}"
