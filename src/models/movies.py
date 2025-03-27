@@ -32,6 +32,7 @@ class Movie(BaseModel, Model):
     cast: list[CastModel] = fields.JSONField(field_type=list[CastModel])
     playtime = fields.IntField()
     genre = fields.CharEnumField(GenreEnum)
+    poster_image_url = fields.CharField(max_length=255, null=True)
 
     class Meta:
         table = "movies"

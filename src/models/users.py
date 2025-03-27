@@ -15,6 +15,7 @@ class User(BaseModel, Model):
     hashed_password = fields.CharField(max_length=128)
     age = fields.IntField()
     gender = fields.CharEnumField(GenderEnum)
+    profile_image_url = fields.CharField(max_length=255, null=True)
     last_login = fields.DatetimeField(null=True)
 
     class Meta:
