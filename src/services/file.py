@@ -4,6 +4,7 @@ from fastapi import HTTPException, UploadFile
 
 from src.configs import config
 from src.models.movies import Movie
+from src.models.reviews import Review
 from src.models.users import User
 from src.utils.file import (
     FileDoesNotExist,
@@ -52,3 +53,11 @@ class FileUploadService:
         await movie.save()
 
         return movie
+
+    async def review_image_upload(self, review: Review, file: UploadFile) -> Review:
+        upload_dir = "reviews/images"
+        saved_image_url = await self._image_upload(file, upload_dir, review.review_image_url)
+        review.review_image_url = saved_image_url
+        await review.save()
+
+        return review
