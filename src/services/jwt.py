@@ -5,19 +5,19 @@ from zoneinfo import ZoneInfo
 import jwt
 from fastapi import HTTPException, Response, status
 
-SECRET_KEY = "asdasdasd1231asd12eadsd12easddasdqlkjlads"
+from src.configs import config
 
 
 class JWTService:
     def __init__(self) -> None:
-        self.algorithm = "HS256"
-        self.access_token_expires_in = 300
-        self.refresh_token_expires_in = 3600 * 24
-        self._secret_key = SECRET_KEY
+        self.algorithm = config.JWT_ALGORITHM
+        self.access_token_expires_in = config.JWT_ACCESS_TOKEN_EXPIRE_MINUTES
+        self.refresh_token_expires_in = config.JWT_REFRESH_TOKEN_EXPIRE_MINUTES
+        self._secret_key = config.SECRET_KEY
 
     def _encode(self, data: dict[str, Any], expires_in: int) -> str:
         payload = data.copy()
-        expire = datetime.now(ZoneInfo("Asia/Seoul")) + timedelta(seconds=expires_in)
+        expire = datetime.now(ZoneInfo("Asia/Seoul")) + timedelta(minutes=expires_in)
         payload.update({"exp": expire})
         return jwt.encode(payload, self._secret_key, algorithm=self.algorithm)
 
@@ -42,7 +42,7 @@ class JWTService:
         response.set_cookie(
             key="access_token",
             value=access_token,
-            expires=self.access_token_expires_in,
+            expires=self.access_token_expires_in * 60,
             httponly=False,
             secure=False,
             samesite="lax",
@@ -50,7 +50,7 @@ class JWTService:
         response.set_cookie(
             key="refresh_token",
             value=refresh_token,
-            expires=self.refresh_token_expires_in,
+            expires=self.refresh_token_expires_in * 60,
             httponly=False,
             secure=False,
             samesite="lax",
