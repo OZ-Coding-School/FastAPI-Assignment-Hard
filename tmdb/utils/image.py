@@ -6,7 +6,7 @@ from tmdb.configs import config
 
 
 async def get_poster_image_by_path(path: str) -> str:
-    """ TMDB에서 포스터 이미지를 다운로드하고 저장하는 함수 """
+    """TMDB에서 포스터 이미지를 다운로드하고 저장하는 함수"""
     # TMDB 이미지 URL
     image_url = config.BASE_IMAGE_URL + path
     upload_dir = "movies/poster_images"
@@ -27,13 +27,13 @@ async def get_poster_image_by_path(path: str) -> str:
             # 파일 저장
             with open(save_path, "wb") as file:
                 file.write(response.content)
-            
+
             print(f"이미지 다운로드 및 업로드 완료: {save_path}")
             return upload_dir + path
-        
+
         except httpx.HTTPStatusError as e:
             print(f"이미지 다운로드 중 HTTP 오류 발생: {e.response.status_code} - {e.response.text}")
         except httpx.RequestError as e:
             print(f"이미지 다운로드 요청 오류 발생: {str(e)}")
-        
+
     return ""

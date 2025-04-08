@@ -1,4 +1,4 @@
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from typing import Any
 
 from tmdb.configs import config
@@ -15,6 +15,6 @@ class SearchParams:
     language: str = "ko"  # 응답 데이터의 언어 지정
     page: int = 1
     api_key: str | None = config.TMDB_API_KEY
-    
+
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
