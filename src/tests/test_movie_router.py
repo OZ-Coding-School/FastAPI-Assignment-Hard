@@ -6,11 +6,15 @@ from tortoise.contrib.test import TestCase
 
 from main import app
 from src.configs import config
-from src.models.movies import Movie
+from src.models.movies import Genre, Movie
 from src.tests.utils.fake_file import fake_image
 
 
 class TestMovieRouter(TestCase):
+    async def asyncSetUp(self) -> None:
+        await super().asyncSetUp()
+        self.genres = [await Genre.create(name=f"test genre{i}", external_id=i) for i in range(3)]
+
     async def test_api_create_movie(self) -> None:
         # when
         async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
@@ -18,15 +22,11 @@ class TestMovieRouter(TestCase):
                 "/movies",
                 json={
                     "title": (title := "test"),
-                    "plot": (plot := "test 중 입니다."),
-                    "cast": (
-                        cast := [
-                            {"name": "lee2", "age": 23, "agency": "A actors", "gender": "male"},
-                            {"name": "lee3", "age": 24, "agency": "B actors", "gender": "male"},
-                        ]
-                    ),
-                    "playtime": (playtime := 240),
-                    "genre": (genre := "SF"),
+                    "overview": (overview := "test 중 입니다."),
+                    "cast": (cast := "lee byeong heon, choi min sik"),
+                    "runtime": (runtime := 240),
+                    "genre_ids": (genre_ids := [self.genres[1].id]),
+                    "release_date": (release_date := "2021-02-01"),
                 },
             )
 
@@ -34,26 +34,24 @@ class TestMovieRouter(TestCase):
         assert response.status_code == status.HTTP_201_CREATED
         response_json = response.json()
         assert response_json["title"] == title
-        assert response_json["plot"] == plot
+        assert response_json["overview"] == overview
         assert response_json["cast"] == cast
-        assert response_json["playtime"] == playtime
-        assert response_json["genre"] == genre
+        assert response_json["runtime"] == runtime
+        assert response_json["genres"] == genre_ids
+        assert response_json["release_date"] == release_date
 
     async def test_api_get_movies_when_query_param_is_nothing(self) -> None:
-        # given
         async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
             for i in range(3):
                 await client.post(
                     "/movies",
                     json={
                         "title": f"test{i}",
-                        "plot": "test 중 입니다.",
-                        "cast": [
-                            {"name": "lee2", "age": 23, "agency": "A actors", "gender": "male"},
-                            {"name": "lee3", "age": 24, "agency": "B actors", "gender": "male"},
-                        ],
-                        "playtime": 240,
-                        "genre": "SF",
+                        "overview": f"test 중 입니다. {i}",
+                        "cast": "lee byeong heon, choi min sik",
+                        "runtime": 240 + i,
+                        "genre_ids": [self.genres[1].id],
+                        "release_date": "2021-02-01",
                     },
                 )
 
@@ -64,9 +62,13 @@ class TestMovieRouter(TestCase):
         assert response.status_code == status.HTTP_200_OK
         response_json = response.json()
         assert len(response_json) == await Movie.filter().count()
-        movies = await Movie.filter().order_by("id")
+        movies = await Movie.filter().all()
         assert response_json[0]["id"] == movies[0].id
         assert response_json[0]["title"] == movies[0].title
+        assert response_json[1]["id"] == movies[1].id
+        assert response_json[1]["title"] == movies[1].title
+        assert response_json[2]["id"] == movies[2].id
+        assert response_json[2]["title"] == movies[2].title
 
     async def test_api_get_movies_when_query_param_is_not_none(self) -> None:
         # given
@@ -75,30 +77,29 @@ class TestMovieRouter(TestCase):
                 "/movies",
                 json={
                     "title": (title := "test"),
-                    "plot": (plot := "test 중 입니다."),
-                    "cast": (
-                        cast := [
-                            {"name": "lee2", "age": 23, "agency": "A actors", "gender": "male"},
-                            {"name": "lee3", "age": 24, "agency": "B actors", "gender": "male"},
-                        ]
-                    ),
-                    "playtime": (playtime := 240),
-                    "genre": (genre := "SF"),
+                    "overview": (overview := "test 중 입니다."),
+                    "cast": (cast := "lee byeong heon, choi min sik"),
+                    "runtime": (runtime := 240),
+                    "genre_ids": (genre_ids := [genre.id for genre in self.genres]),
+                    "release_date": (release_date := "2021-02-01"),
                 },
             )
 
             # when
-            response = await client.get("/movies", params={"title": title, "genre": genre})
+            response = await client.get(
+                url="/movies", params={"title": title, "genre_ids": [genre.id for genre in self.genres[:2]]}
+            )
 
         # then
         assert response.status_code == status.HTTP_200_OK
         response_json = response.json()
         assert len(response_json) == 1
         assert response_json[0]["title"] == title
-        assert response_json[0]["plot"] == plot
+        assert response_json[0]["overview"] == overview
         assert response_json[0]["cast"] == cast
-        assert response_json[0]["genre"] == genre
-        assert response_json[0]["playtime"] == playtime
+        assert response_json[0]["genres"] == genre_ids
+        assert response_json[0]["runtime"] == runtime
+        assert response_json[0]["release_date"] == release_date
 
     async def test_api_get_movie(self) -> None:
         # given
@@ -107,15 +108,11 @@ class TestMovieRouter(TestCase):
                 "/movies",
                 json={
                     "title": (title := "test"),
-                    "plot": (plot := "test 중 입니다."),
-                    "cast": (
-                        cast := [
-                            {"name": "lee2", "age": 23, "agency": "A actors", "gender": "male"},
-                            {"name": "lee3", "age": 24, "agency": "B actors", "gender": "male"},
-                        ]
-                    ),
-                    "playtime": (playtime := 240),
-                    "genre": (genre := "SF"),
+                    "overview": (overview := "test 중 입니다."),
+                    "cast": (cast := "lee byeong heon, choi min sik"),
+                    "runtime": (runtime := 240),
+                    "genre_ids": (genre_ids := [genre.id for genre in self.genres]),
+                    "release_date": (release_date := "2021-02-01"),
                 },
             )
             movie_id = create_response.json()["id"]
@@ -126,10 +123,11 @@ class TestMovieRouter(TestCase):
         assert response.status_code == status.HTTP_200_OK
         response_json = response.json()
         assert response_json["title"] == title
-        assert response_json["plot"] == plot
+        assert response_json["overview"] == overview
         assert response_json["cast"] == cast
-        assert response_json["playtime"] == playtime
-        assert response_json["genre"] == genre
+        assert response_json["runtime"] == runtime
+        assert response_json["genres"] == genre_ids
+        assert response_json["release_date"] == release_date
 
     async def test_api_get_movie_when_movie_id_is_invalid(self) -> None:
         # when
@@ -146,13 +144,11 @@ class TestMovieRouter(TestCase):
                 "/movies",
                 json={
                     "title": "test",
-                    "plot": "test 중 입니다.",
-                    "cast": [
-                        {"name": "lee2", "age": 23, "agency": "A actors", "gender": "male"},
-                        {"name": "lee3", "age": 24, "agency": "B actors", "gender": "male"},
-                    ],
-                    "playtime": 240,
-                    "genre": "SF",
+                    "overview": "test 중 입니다.",
+                    "cast": "lee byeong heon, choi min sik",
+                    "runtime": 240,
+                    "genre_ids": [genre.id for genre in self.genres],
+                    "release_date": "2021-02-01",
                 },
             )
             movie_id = create_response.json()["id"]
@@ -162,8 +158,8 @@ class TestMovieRouter(TestCase):
                 f"/movies/{movie_id}",
                 json={
                     "title": (updated_title := "updated_title"),
-                    "playtime": (updated_playtime := 180),
-                    "genre": (updated_genre := "Fantasy"),
+                    "runtime": (updated_runtime := 180),
+                    "genre_ids": (updated_genres := [self.genres[2].id]),
                 },
             )
 
@@ -171,8 +167,8 @@ class TestMovieRouter(TestCase):
         assert response.status_code == status.HTTP_200_OK
         response_json = response.json()
         assert response_json["title"] == updated_title
-        assert response_json["playtime"] == updated_playtime
-        assert response_json["genre"] == updated_genre
+        assert response_json["runtime"] == updated_runtime
+        assert response_json["genres"] == updated_genres
 
     async def test_api_update_movie_when_movie_id_is_invalid(self) -> None:
         # when
@@ -192,13 +188,11 @@ class TestMovieRouter(TestCase):
                 "/movies",
                 json={
                     "title": "test",
-                    "plot": "test 중 입니다.",
-                    "cast": [
-                        {"name": "lee2", "age": 23, "agency": "A actors", "gender": "male"},
-                        {"name": "lee3", "age": 24, "agency": "B actors", "gender": "male"},
-                    ],
-                    "playtime": 240,
-                    "genre": "SF",
+                    "overview": "test 중 입니다.",
+                    "cast": "lee byeong heon, choi min sik",
+                    "runtime": 240,
+                    "genre_ids": [genre.id for genre in self.genres],
+                    "release_date": "2021-02-01",
                 },
             )
             movie_id = create_response.json()["id"]
@@ -224,13 +218,11 @@ class TestMovieRouter(TestCase):
                 "/movies",
                 json={
                     "title": "test",
-                    "plot": "test 중 입니다.",
-                    "cast": [
-                        {"name": "lee2", "age": 23, "agency": "A actors", "gender": "male"},
-                        {"name": "lee3", "age": 24, "agency": "B actors", "gender": "male"},
-                    ],
-                    "playtime": 240,
-                    "genre": "SF",
+                    "overview": "test 중 입니다.",
+                    "cast": "lee byeong heon, choi min sik",
+                    "runtime": 240,
+                    "genre_ids": [genre.id for genre in self.genres],
+                    "release_date": "2021-02-01",
                 },
             )
             movie_id = create_response.json()["id"]
@@ -265,13 +257,11 @@ class TestMovieRouter(TestCase):
                 "/movies",
                 json={
                     "title": "test",
-                    "plot": "test 중 입니다.",
-                    "cast": [
-                        {"name": "lee2", "age": 23, "agency": "A actors", "gender": "male"},
-                        {"name": "lee3", "age": 24, "agency": "B actors", "gender": "male"},
-                    ],
-                    "playtime": 240,
-                    "genre": "SF",
+                    "overview": "test 중 입니다.",
+                    "cast": "lee byeong heon, choi min sik",
+                    "runtime": 240,
+                    "genre_ids": [genre.id for genre in self.genres],
+                    "release_date": "2021-02-01",
                 },
             )
             movie_id = create_response.json()["id"]

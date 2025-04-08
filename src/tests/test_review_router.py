@@ -6,8 +6,8 @@ from main import app
 from src.models.movies import Movie
 from src.models.users import GenderEnum, User
 from src.services.auth import AuthService
-from src.tests.utils.fake_file import fake_image
 from src.tests.utils.cleanup_test_files import remove_test_files
+from src.tests.utils.fake_file import fake_image
 
 
 class TestReviewRouter(TestCase):
@@ -19,13 +19,11 @@ class TestReviewRouter(TestCase):
         # given
         movie = await Movie.create(
             title="test",
-            plot="Testing...",
-            cast=[
-                {"name": "lee2", "age": 23, "agency": "A actors", "gender": "male"},
-                {"name": "lee3", "age": 24, "agency": "B actors", "gender": "male"},
-            ],
-            playtime=240,
-            genre="SF",
+            overview="test 중 입니다.",
+            cast="lee byeong heon, choi min sik",
+            runtime=240,
+            genre_ids=[1, 2],
+            release_date="2021-02-01",
         )
 
         user = await User.create(
@@ -63,13 +61,11 @@ class TestReviewRouter(TestCase):
         # given
         movie = await Movie.create(
             title="test",
-            plot="Testing...",
-            cast=[
-                {"name": "lee2", "age": 23, "agency": "A actors", "gender": "male"},
-                {"name": "lee3", "age": 24, "agency": "B actors", "gender": "male"},
-            ],
-            playtime=240,
-            genre="SF",
+            overview="test 중 입니다.",
+            cast="lee byeong heon, choi min sik",
+            runtime=240,
+            genre_ids=[1, 2],
+            release_date="2021-02-01",
         )
 
         user = await User.create(
@@ -125,13 +121,11 @@ class TestReviewRouter(TestCase):
         # given
         movie = await Movie.create(
             title="test",
-            plot="Testing...",
-            cast=[
-                {"name": "lee2", "age": 23, "agency": "A actors", "gender": "male"},
-                {"name": "lee3", "age": 24, "agency": "B actors", "gender": "male"},
-            ],
-            playtime=240,
-            genre="SF",
+            overview="test 중 입니다.",
+            cast="lee byeong heon, choi min sik",
+            runtime=240,
+            genre_ids=[1, 2],
+            release_date="2021-02-01",
         )
 
         user = await User.create(
@@ -196,13 +190,11 @@ class TestReviewRouter(TestCase):
         # given
         movie = await Movie.create(
             title="test",
-            plot="Testing...",
-            cast=[
-                {"name": "lee2", "age": 23, "agency": "A actors", "gender": "male"},
-                {"name": "lee3", "age": 24, "agency": "B actors", "gender": "male"},
-            ],
-            playtime=240,
-            genre="SF",
+            overview="test 중 입니다.",
+            cast="lee byeong heon, choi min sik",
+            runtime=240,
+            genre_ids=[1, 2],
+            release_date="2021-02-01",
         )
 
         await User.create(
@@ -252,13 +244,11 @@ class TestReviewRouter(TestCase):
         # given
         movie = await Movie.create(
             title="test",
-            plot="Testing...",
-            cast=[
-                {"name": "lee2", "age": 23, "agency": "A actors", "gender": "male"},
-                {"name": "lee3", "age": 24, "agency": "B actors", "gender": "male"},
-            ],
-            playtime=240,
-            genre="SF",
+            overview="test 중 입니다.",
+            cast="lee byeong heon, choi min sik",
+            runtime=240,
+            genre_ids=[1, 2],
+            release_date="2021-02-01",
         )
 
         users = [
@@ -304,14 +294,12 @@ class TestReviewRouter(TestCase):
         # given
         movies = [
             await Movie.create(
-                title=f"test {i}",
-                plot=f"Testing... {i}",
-                cast=[
-                    {"name": f"lee{i}", "age": 23 + i, "agency": "A actors", "gender": "male"},
-                    {"name": f"lee{i+1}", "age": 24 + i, "agency": "B actors", "gender": "male"},
-                ],
-                playtime=240,
-                genre="SF",
+                title=f"test{i}",
+                overview="test 중 입니다.",
+                cast="lee byeong heon, choi min sik",
+                runtime=240,
+                genre_ids=[1, 2],
+                release_date="2021-02-01",
             )
             for i in range(1, 4)
         ]

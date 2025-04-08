@@ -23,13 +23,11 @@ class LikeRouterTestCase(TestCase):
     async def create_movie(self) -> Movie:
         movie = await Movie.create(
             title="test",
-            plot="Testing...",
-            cast=[
-                {"name": "lee", "age": 23, "agency": "A actors", "gender": "male"},
-                {"name": "lee2", "age": 24, "agency": "B actors", "gender": "male"},
-            ],
-            playtime=240,
-            genre="SF",
+            overview="test 중 입니다.",
+            cast="lee byeong heon, choi min sik",
+            runtime=240,
+            genre_ids=[1, 2],
+            release_date="2021-02-01",
         )
         return movie
 
