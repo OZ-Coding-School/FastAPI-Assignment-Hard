@@ -1,38 +1,25 @@
-from enum import StrEnum
-
-from pydantic import BaseModel as PydanticBaseModel
 from tortoise import Model, fields
 
 from src.models.base import BaseModel
-from src.models.users import GenderEnum
 
 
-class GenreEnum(StrEnum):
-    SF = "SF"
-    ADVENTURE = "Adventure"
-    ROMANCE = "Romance"
-    COMIC = "Comic"
-    FANTASY = "Fantasy"
-    SCIENCE = "Science"
-    MYSTERY = "Mystery"
-    ACTION = "Action"
-    HORROR = "Horror"
+class Genre(BaseModel, Model):
+    external_id = fields.IntField(unique=True)
+    name = fields.CharField(max_length=255)
 
-
-class CastModel(PydanticBaseModel):
-    name: str
-    age: int
-    agency: str
-    gender: GenderEnum
+    class Meta:
+        table = "genres"
 
 
 class Movie(BaseModel, Model):
+    external_id = fields.IntField(unique=True, null=True)
     title = fields.CharField(max_length=255)
-    plot = fields.TextField()
-    cast: list[CastModel] = fields.JSONField(field_type=list[CastModel])
-    playtime = fields.IntField()
-    genre = fields.CharEnumField(GenreEnum)
+    overview = fields.TextField()
+    cast = fields.CharField(max_length=255)
+    release_date = fields.DateField()
+    runtime = fields.IntField()
     poster_image_url = fields.CharField(max_length=255, null=True)
+    genres: fields.ManyToManyRelation[Genre] = fields.ManyToManyField("models.Genre", related_name="movies")
 
     class Meta:
         table = "movies"

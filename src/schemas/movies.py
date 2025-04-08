@@ -1,36 +1,38 @@
+from datetime import date
 from typing import Annotated
 
 from pydantic import BaseModel, Field
 
-from src.models.movies import CastModel, GenreEnum
-
 
 class CreateMovieRequest(BaseModel):
     title: str
-    plot: str
-    cast: list[CastModel]
-    playtime: int
-    genre: GenreEnum
+    overview: str
+    cast: str
+    genre_ids: list[int]
+    runtime: int
+    release_date: date
 
 
 class MovieResponse(BaseModel):
     id: int
     title: str
-    plot: str
-    cast: list[CastModel]
-    playtime: int
-    genre: GenreEnum
+    overview: str
+    cast: str
+    genres: list[int]
+    runtime: int
+    release_date: date
     poster_image_url: str | None = None
 
 
 class MovieSearchParams(BaseModel):
     title: str | None = None
-    genre: GenreEnum | None = None
+    genre_ids: list[int] | None = None
 
 
 class MovieUpdateRequest(BaseModel):
     title: str | None = None
-    plot: str | None = None
-    cast: list[CastModel] | None = None
-    playtime: Annotated[int, Field(gt=0)] | None = None
-    genre: GenreEnum | None = None
+    overview: str | None = None
+    cast: str | None = None
+    genre_ids: list[int] | None = None
+    runtime: Annotated[int, Field(gt=0)] | None = None
+    release_date: date | None = None
