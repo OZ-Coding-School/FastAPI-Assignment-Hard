@@ -19,6 +19,7 @@ class MovieResponse(BaseModel):
     overview: str
     cast: str
     genres: list[int]
+    genres_str: list[str]
     runtime: int
     release_date: date
     poster_image_url: str | None = None

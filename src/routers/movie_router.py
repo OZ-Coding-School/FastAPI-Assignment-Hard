@@ -35,6 +35,7 @@ async def create_movie(data: CreateMovieRequest) -> MovieResponse:
         runtime=movie.runtime,
         release_date=movie.release_date,
         genres=[genre.id for genre in movie.genres],
+        genres_str=[genre.name for genre in movie.genres],
     )
 
 
@@ -58,6 +59,7 @@ async def get_movies(query_params: Annotated[MovieSearchParams, Query()]) -> lis
             runtime=movie.runtime,
             release_date=movie.release_date,
             genres=[genre.id for genre in movie.genres],
+            genres_str=[genre.name for genre in movie.genres],
         )
         for movie in movies
     ]
@@ -77,6 +79,7 @@ async def get_movie(movie_id: int = Path(gt=0)) -> MovieResponse:
         runtime=movie.runtime,
         release_date=movie.release_date,
         genres=[genre.id for genre in movie.genres],
+        genres_str=[genre.name for genre in movie.genres],
     )
 
 
@@ -108,6 +111,7 @@ async def update_movie(data: MovieUpdateRequest, movie_id: int = Path(gt=0)) -> 
         runtime=movie.runtime,
         release_date=movie.release_date,
         genres=[genre.id for genre in movie.genres],
+        genres_str=[genre.name for genre in movie.genres],
     )
 
 
@@ -139,6 +143,7 @@ async def register_poster_image(
         cast=updated_movie.cast,
         runtime=updated_movie.runtime,
         genres=[genre.id for genre in updated_movie.genres],
+        genres_str=[genre.name for genre in movie.genres],
         release_date=updated_movie.release_date,
         poster_image_url=updated_movie.poster_image_url,
     )
