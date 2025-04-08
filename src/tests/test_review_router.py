@@ -6,8 +6,8 @@ from main import app
 from src.models.movies import Movie
 from src.models.users import GenderEnum, User
 from src.services.auth import AuthService
-from src.tests.utils.fake_file import fake_image
 from src.tests.utils.cleanup_test_files import remove_test_files
+from src.tests.utils.fake_file import fake_image
 
 
 class TestReviewRouter(TestCase):
