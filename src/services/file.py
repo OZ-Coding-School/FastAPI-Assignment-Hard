@@ -36,7 +36,7 @@ class FileUploadService:
         except FileDoesNotExist:
             return file_url
 
-        return saved_path
+        return file_url
 
     async def user_profile_image_upload(self, user: User, file: UploadFile) -> User:
         upload_dir = "users/profile_images"
